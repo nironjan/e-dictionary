@@ -44,6 +44,10 @@ export function MeaningListModal({
 
   const handleToggleVerification = useCallback(
     async (meaning: WordMeaning) => {
+      if (!meaning.id) {
+        return;
+      }
+
       await verifyMutation.mutateAsync({
         id: meaning.id,
         dto: {
@@ -56,6 +60,10 @@ export function MeaningListModal({
 
   const handleDelete = useCallback(
     async (meaning: WordMeaning) => {
+      if (!meaning.id) {
+        return;
+      }
+
       const confirmed = window.confirm(
         `Permanently delete this meaning from "${wordText ?? "this word"}"?`,
       );

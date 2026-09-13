@@ -18,6 +18,7 @@ import {
 import { APP_CONSTANTS } from "../../../../../lib/constants/constants";
 import { MeaningListModal } from "../meaning/meaning-list-modal";
 import { WordDetailModal } from "./word-detail-modal";
+import { DeleteAlertDialog } from "../../../../../shared/components/common/delete-alert-dialog";
 
 export function WordList() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export function WordList() {
   const [limit] = useState(20);
 
   const [search, setSearch] = useState("");
-  const [languageCode, setLanguageCode] = useState("");
+  const [languageCode, setLanguageCode] = useState<string | null>(null);
   const [verifiedFilter, setVerifiedFilter] = useState("all");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
 
@@ -44,11 +45,21 @@ export function WordList() {
   const [meaningModalOpen, setMeaningModalOpen] = useState(false);
   const [meaningWord, setMeaningWord] = useState<WordSummary | null>(null);
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [wordToDelete, setWordToDelete] = useState<WordSummary | null>(null);
+
   // ---------------------------------------------------------------------------
   // Reference data
   // ---------------------------------------------------------------------------
 
   const { data: languages = [] } = useLanguages();
+
+  const englishLanguage = useMemo(
+    () => languages.find((language) => language.code.toLowerCase() === "en"),
+    [languages],
+  );
+
+  const effectiveLanguageCode = languageCode ?? englishLanguage?.code;
 
   const { data: categoriesResponse } = useCategories({
     page: 1,
@@ -66,11 +77,18 @@ export function WordList() {
       page,
       limit,
       search: search.trim() || undefined,
-      languageCode: languageCode || undefined,
+      languageCode: effectiveLanguageCode,
       isVerified: verifiedFilter === "all" ? undefined : verifiedFilter,
       categoryId: selectedCategoryId || undefined,
     }),
-    [page, limit, search, languageCode, verifiedFilter, selectedCategoryId],
+    [
+      page,
+      limit,
+      search,
+      effectiveLanguageCode,
+      verifiedFilter,
+      selectedCategoryId,
+    ],
   );
 
   const { data: response, isLoading } = useWords(queryParams);
@@ -137,20 +155,10 @@ export function WordList() {
     [verifyMutation],
   );
 
-  const handleDelete = useCallback(
-    async (word: WordSummary) => {
-      const confirmed = window.confirm(
-        `Permanently remove word "${word.text}" from dictionary index?`,
-      );
-
-      if (!confirmed) {
-        return;
-      }
-
-      await deleteMutation.mutateAsync(word.id);
-    },
-    [deleteMutation],
-  );
+  const handleDelete = useCallback((word: WordSummary) => {
+    setWordToDelete(word);
+    setDeleteDialogOpen(true);
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Meaning actions
@@ -197,6 +205,17 @@ export function WordList() {
     setPage(1);
   }, []);
 
+  const handleConfirmDelete = useCallback(async () => {
+    if (!wordToDelete) {
+      return;
+    }
+
+    await deleteMutation.mutateAsync(wordToDelete.id);
+
+    setDeleteDialogOpen(false);
+    setWordToDelete(null);
+  }, [deleteMutation, wordToDelete]);
+
   // ---------------------------------------------------------------------------
   // Pagination
   // ---------------------------------------------------------------------------
@@ -229,7 +248,7 @@ export function WordList() {
     <div className="space-y-4">
       <WordListToolbar
         search={search}
-        languageCode={languageCode || "all-languages"}
+        languageCode={effectiveLanguageCode ?? "all-languages"}
         selectedCategoryId={selectedCategoryId || "all-categories"}
         verifiedFilter={verifiedFilter}
         languages={languages}
@@ -268,6 +287,22 @@ export function WordList() {
         onEdit={(word) => {
           router.push(APP_CONSTANTS.ROUTES.EDIT_WORD(word.id));
         }}
+      />
+
+      <DeleteAlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+
+          if (!open && !deleteMutation.isPending) {
+            setWordToDelete(null);
+          }
+        }}
+        itemName={wordToDelete?.text}
+        title="Delete word?"
+        description="This will permanently remove the word from the dictionary."
+        onConfirm={handleConfirmDelete}
+        isDeleting={deleteMutation.isPending}
       />
     </div>
   );

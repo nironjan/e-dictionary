@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../../../../shared/components/ui/accordion";
 import { Button } from "../../../../../shared/components/ui/button";
 
 import { useLanguages } from "../../../../language/application/queries/language.query";
@@ -20,9 +25,11 @@ import type {
   TranslationUpdate,
   ExampleUpdate,
 } from "../meaning-rows/meaning.types";
+
 import { DefinitionsSection } from "../meaning-rows/definition-section";
 import { TranslationsSection } from "../meaning-rows/translation-section";
 import { ExamplesSection } from "../meaning-rows/example-section";
+import { useState } from "react";
 
 interface StepMeaningsProps {
   formData: CreateWordFormData;
@@ -31,21 +38,9 @@ interface StepMeaningsProps {
 
 export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
   const { data: languages = [] } = useLanguages();
+  const [expandedMeanings, setExpandedMeanings] = useState<string[]>([]);
 
   const meanings = formData.meanings ?? [];
-  console.log(
-    "StepMeanings examples:",
-    meanings.map((meaning) => ({
-      meaningId: meaning.id,
-      examples: meaning.examples.map((example) => ({
-        id: example.id,
-        text: example.text,
-        isVerified: example.isVerified,
-      })),
-    })),
-  );
-
-  const [activeMeaningIdx, setActiveMeaningIdx] = useState(0);
 
   // ---------------------------------------------------------------------------
   // Meanings
@@ -74,21 +69,25 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
       meanings: nextList,
     });
 
-    setActiveMeaningIdx(nextList.length - 1);
+    const newMeaningValue = `meaning-${nextList.length - 1}`;
+
+    setExpandedMeanings((current) => [...current, newMeaningValue]);
   };
 
-  const handleRemoveMeaning = (idx: number) => {
-    const nextList = meanings.filter((_, i) => i !== idx);
+  const handleRemoveMeaning = (meaningIdx: number) => {
+    if (meanings.length <= 1) {
+      return;
+    }
+
+    const nextList = meanings.filter((_, index) => index !== meaningIdx);
 
     onChange({
       meanings: nextList,
     });
-
-    setActiveMeaningIdx(Math.max(0, idx - 1));
   };
 
-  const updateCurrentMeaning = (partial: Partial<MeaningItem>) => {
-    const currentMeaning = meanings[activeMeaningIdx];
+  const updateMeaning = (meaningIdx: number, partial: Partial<MeaningItem>) => {
+    const currentMeaning = meanings[meaningIdx];
 
     if (!currentMeaning) {
       return;
@@ -96,7 +95,7 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
 
     const updated = [...meanings];
 
-    updated[activeMeaningIdx] = {
+    updated[meaningIdx] = {
       ...currentMeaning,
       ...partial,
     };
@@ -106,18 +105,18 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
     });
   };
 
-  const currentMeaning = meanings[activeMeaningIdx];
-
   // ---------------------------------------------------------------------------
   // Definitions
   // ---------------------------------------------------------------------------
 
-  const handleAddDefinition = () => {
-    if (!currentMeaning) {
+  const handleAddDefinition = (meaningIdx: number) => {
+    const meaning = meanings[meaningIdx];
+
+    if (!meaning) {
       return;
     }
 
-    const definitions = currentMeaning.definitions ?? [];
+    const definitions = meaning.definitions ?? [];
 
     const nextDefinitions: DefinitionItem[] = [
       ...definitions,
@@ -128,21 +127,23 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
       },
     ];
 
-    updateCurrentMeaning({
+    updateMeaning(meaningIdx, {
       definitions: nextDefinitions,
     });
   };
 
   const handleUpdateDefinition = (
+    meaningIdx: number,
     defIdx: number,
     partial: DefinitionUpdate,
   ) => {
-    if (!currentMeaning) {
+    const meaning = meanings[meaningIdx];
+
+    if (!meaning) {
       return;
     }
 
-    const definitions = [...(currentMeaning.definitions ?? [])];
-
+    const definitions = [...(meaning.definitions ?? [])];
     const currentDefinition = definitions[defIdx];
 
     if (!currentDefinition) {
@@ -154,19 +155,21 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
       ...partial,
     };
 
-    updateCurrentMeaning({
+    updateMeaning(meaningIdx, {
       definitions,
     });
   };
 
-  const handleRemoveDefinition = (defIdx: number) => {
-    if (!currentMeaning) {
+  const handleRemoveDefinition = (meaningIdx: number, defIdx: number) => {
+    const meaning = meanings[meaningIdx];
+
+    if (!meaning) {
       return;
     }
 
-    updateCurrentMeaning({
-      definitions: (currentMeaning.definitions ?? []).filter(
-        (_, i) => i !== defIdx,
+    updateMeaning(meaningIdx, {
+      definitions: (meaning.definitions ?? []).filter(
+        (_, index) => index !== defIdx,
       ),
     });
   };
@@ -175,8 +178,10 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
   // Translations
   // ---------------------------------------------------------------------------
 
-  const handleAddTranslation = () => {
-    if (!currentMeaning) {
+  const handleAddTranslation = (meaningIdx: number) => {
+    const meaning = meanings[meaningIdx];
+
+    if (!meaning) {
       return;
     }
 
@@ -184,7 +189,7 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
       languages.find((language) => language.id !== formData.languageId) ??
       languages[0];
 
-    const translations = currentMeaning.translations ?? [];
+    const translations = meaning.translations ?? [];
 
     const newTranslation: TranslationItem = {
       clientKey: crypto.randomUUID(),
@@ -195,21 +200,23 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
       sortOrder: translations.length,
     };
 
-    updateCurrentMeaning({
+    updateMeaning(meaningIdx, {
       translations: [...translations, newTranslation],
     });
   };
 
   const handleUpdateTranslation = (
+    meaningIdx: number,
     transIdx: number,
     partial: TranslationUpdate,
   ) => {
-    if (!currentMeaning) {
+    const meaning = meanings[meaningIdx];
+
+    if (!meaning) {
       return;
     }
 
-    const translations = [...(currentMeaning.translations ?? [])];
-
+    const translations = [...(meaning.translations ?? [])];
     const currentTranslation = translations[transIdx];
 
     if (!currentTranslation) {
@@ -221,19 +228,21 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
       ...partial,
     };
 
-    updateCurrentMeaning({
+    updateMeaning(meaningIdx, {
       translations,
     });
   };
 
-  const handleRemoveTranslation = (transIdx: number) => {
-    if (!currentMeaning) {
+  const handleRemoveTranslation = (meaningIdx: number, transIdx: number) => {
+    const meaning = meanings[meaningIdx];
+
+    if (!meaning) {
       return;
     }
 
-    updateCurrentMeaning({
-      translations: (currentMeaning.translations ?? []).filter(
-        (_, i) => i !== transIdx,
+    updateMeaning(meaningIdx, {
+      translations: (meaning.translations ?? []).filter(
+        (_, index) => index !== transIdx,
       ),
     });
   };
@@ -242,33 +251,40 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
   // Examples
   // ---------------------------------------------------------------------------
 
-  const handleAddExample = () => {
-    if (!currentMeaning) {
+  const handleAddExample = (meaningIdx: number) => {
+    const meaning = meanings[meaningIdx];
+
+    if (!meaning) {
       return;
     }
 
-    const examples = currentMeaning.examples ?? [];
+    const examples = meaning.examples ?? [];
 
     const newExample: ExampleItem = {
       languageId: formData.languageId || languages[0]?.id || "",
       text: "",
-      translationClientKey: currentMeaning.translations?.[0]?.clientKey ?? "",
+      translationClientKey: meaning.translations?.[0]?.clientKey ?? "",
       isVerified: false,
       sortOrder: examples.length,
     };
 
-    updateCurrentMeaning({
+    updateMeaning(meaningIdx, {
       examples: [...examples, newExample],
     });
   };
 
-  const handleUpdateExample = (exIdx: number, partial: ExampleUpdate) => {
-    if (!currentMeaning) {
+  const handleUpdateExample = (
+    meaningIdx: number,
+    exIdx: number,
+    partial: ExampleUpdate,
+  ) => {
+    const meaning = meanings[meaningIdx];
+
+    if (!meaning) {
       return;
     }
 
-    const examples = [...(currentMeaning.examples ?? [])];
-
+    const examples = [...(meaning.examples ?? [])];
     const currentExample = examples[exIdx];
 
     if (!currentExample) {
@@ -280,20 +296,26 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
       ...partial,
     };
 
-    updateCurrentMeaning({
+    updateMeaning(meaningIdx, {
       examples,
     });
   };
 
-  const handleRemoveExample = (exIdx: number) => {
-    if (!currentMeaning) {
+  const handleRemoveExample = (meaningIdx: number, exIdx: number) => {
+    const meaning = meanings[meaningIdx];
+
+    if (!meaning) {
       return;
     }
 
-    updateCurrentMeaning({
-      examples: (currentMeaning.examples ?? []).filter((_, i) => i !== exIdx),
+    updateMeaning(meaningIdx, {
+      examples: (meaning.examples ?? []).filter((_, index) => index !== exIdx),
     });
   };
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <div className="animate-in fade-in-50 space-y-4">
@@ -316,7 +338,7 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
           onClick={handleAddMeaning}
           className="h-8 gap-1 text-xs"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="size-3.5" />
           <span>Add Sense</span>
         </Button>
       </div>
@@ -324,8 +346,11 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
       {/* Empty State */}
       {meanings.length === 0 ? (
         <div className="rounded-lg border border-dashed border-zinc-200 p-8 text-center text-xs text-zinc-400">
-          No senses or meanings created yet. Words require at least one meaning
-          definition.
+          <p>
+            No senses or meanings created yet. Words require at least one
+            meaning definition.
+          </p>
+
           <div className="mt-3">
             <Button
               type="button"
@@ -338,101 +363,136 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          {/* Sense Navigation */}
-          <div className="space-y-1.5 pr-3 md:border-r md:border-zinc-200">
-            <span className="mb-1 block text-[11px] font-semibold uppercase text-zinc-400">
-              Lexical Senses
-            </span>
+        <Accordion
+          multiple
+          value={expandedMeanings}
+          onValueChange={setExpandedMeanings}
+          className="space-y-3"
+        >
+          {meanings.map((meaning, idx) => {
+            const definitionCount = meaning.definitions?.length ?? 0;
 
-            {meanings.map((meaning, idx) => (
-              <div
-                key={idx}
-                role="button"
-                tabIndex={0}
-                onClick={() => setActiveMeaningIdx(idx)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
+            const translationCount = meaning.translations?.length ?? 0;
 
-                    setActiveMeaningIdx(idx);
-                  }
-                }}
-                className={`flex cursor-pointer items-center justify-between rounded-lg border p-2 text-xs font-medium transition-colors ${
-                  activeMeaningIdx === idx
-                    ? "border-zinc-900 bg-zinc-900 text-white shadow-xs"
-                    : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
-                }`}
+            const exampleCount = meaning.examples?.length ?? 0;
+
+            return (
+              <AccordionItem
+                key={meaning.id ?? `new-${idx}`}
+                value={`meaning-${idx}`}
+                className="overflow-hidden rounded-lg border border-zinc-200 bg-white"
               >
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="font-mono text-[10px] opacity-70">
-                    #{idx + 1}
-                  </span>
-
-                  <span className="capitalize">{meaning.partOfSpeech}</span>
-
-                  {meaning.isArchaic && (
-                    <span className="rounded bg-amber-500/20 px-1 text-[9px] text-amber-300">
-                      arc
+                {/* Meaning Header */}
+                <AccordionTrigger className="px-4 py-4 hover:no-underline">
+                  <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    {/* Number */}
+                    <span className="shrink-0 font-mono text-[10px] text-zinc-400">
+                      #{idx + 1}
                     </span>
-                  )}
-                </div>
 
-                {meanings.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
+                    {/* Part of speech */}
+                    <span className="capitalize font-semibold text-zinc-800">
+                      {meaning.partOfSpeech}
+                    </span>
 
-                      handleRemoveMeaning(idx);
-                    }}
-                    className={`rounded p-1 text-xs hover:bg-red-500/20 ${
-                      activeMeaningIdx === idx
-                        ? "text-zinc-300 hover:text-white"
-                        : "text-zinc-400 hover:text-red-600"
-                    }`}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+                    {/* Archaic */}
+                    {meaning.isArchaic && (
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-medium text-amber-700">
+                        archaic
+                      </span>
+                    )}
 
-          {/* Active Sense */}
-          {currentMeaning && (
-            <div className="space-y-4 md:col-span-3">
-              <MeaningSettings
-                meaning={currentMeaning}
-                onChange={updateCurrentMeaning}
-              />
+                    {/* Summary counts */}
+                    <div className="hidden min-w-0 items-center gap-2 text-[10px] text-zinc-400 sm:flex">
+                      <span>
+                        {definitionCount}{" "}
+                        {definitionCount === 1 ? "definition" : "definitions"}
+                      </span>
 
-              <DefinitionsSection
-                definitions={currentMeaning.definitions ?? []}
-                onAdd={handleAddDefinition}
-                onUpdate={handleUpdateDefinition}
-                onRemove={handleRemoveDefinition}
-              />
+                      <span>·</span>
 
-              <TranslationsSection
-                translations={currentMeaning.translations ?? []}
-                languages={languages}
-                sourceLanguageId={formData.languageId}
-                onAdd={handleAddTranslation}
-                onUpdate={handleUpdateTranslation}
-                onRemove={handleRemoveTranslation}
-              />
+                      <span>
+                        {translationCount}{" "}
+                        {translationCount === 1
+                          ? "translation"
+                          : "translations"}
+                      </span>
 
-              <ExamplesSection
-                examples={currentMeaning.examples ?? []}
-                languages={languages}
-                onAdd={handleAddExample}
-                onUpdate={handleUpdateExample}
-                onRemove={handleRemoveExample}
-              />
-            </div>
-          )}
-        </div>
+                      <span>·</span>
+
+                      <span>
+                        {exampleCount}{" "}
+                        {exampleCount === 1 ? "example" : "examples"}
+                      </span>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+
+                {/* Meaning Content */}
+                <AccordionContent className="border-t border-zinc-100 px-4 pb-5 pt-4">
+                  <div className="space-y-5">
+                    {/* Meaning Settings */}
+                    <MeaningSettings
+                      meaning={meaning}
+                      onChange={(partial) => updateMeaning(idx, partial)}
+                    />
+
+                    {/* Definitions */}
+                    <DefinitionsSection
+                      definitions={meaning.definitions ?? []}
+                      onAdd={() => handleAddDefinition(idx)}
+                      onUpdate={(defIdx, partial) =>
+                        handleUpdateDefinition(idx, defIdx, partial)
+                      }
+                      onRemove={(defIdx) => handleRemoveDefinition(idx, defIdx)}
+                    />
+
+                    {/* Translations */}
+                    <TranslationsSection
+                      translations={meaning.translations ?? []}
+                      languages={languages}
+                      sourceLanguageId={formData.languageId}
+                      onAdd={() => handleAddTranslation(idx)}
+                      onUpdate={(transIdx, partial) =>
+                        handleUpdateTranslation(idx, transIdx, partial)
+                      }
+                      onRemove={(transIdx) =>
+                        handleRemoveTranslation(idx, transIdx)
+                      }
+                    />
+
+                    {/* Examples */}
+                    <ExamplesSection
+                      examples={meaning.examples ?? []}
+                      languages={languages}
+                      onAdd={() => handleAddExample(idx)}
+                      onUpdate={(exIdx, partial) =>
+                        handleUpdateExample(idx, exIdx, partial)
+                      }
+                      onRemove={(exIdx) => handleRemoveExample(idx, exIdx)}
+                    />
+
+                    {/* Delete Meaning */}
+                    {meanings.length > 1 && (
+                      <div className="flex justify-end border-t border-zinc-100 pt-4">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveMeaning(idx)}
+                          className="gap-1.5 text-xs text-red-500 hover:bg-red-50 hover:text-red-700"
+                        >
+                          <Trash2 className="size-3.5" />
+                          Delete Meaning
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
       )}
     </div>
   );
