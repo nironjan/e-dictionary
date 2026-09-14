@@ -5,23 +5,15 @@ import { useMemo } from "react";
 
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
 import { Switch } from "@/shared/components/ui/switch";
-
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 
-import { useCategories } from "../../application/queries/category.query";
+import { useCategories } from "../../../application/queries/category.query";
 
-import type { Category } from "../../domain/types/category.type";
+import type { Category } from "../../../domain/types/category.type";
 
-import { useCategoryForm } from "../hooks/use-category-form";
-import { useLanguages } from "../../../language/application/queries/language.query";
+import { useCategoryForm } from "../../hooks/use-category-form";
+import { LanguageSelect } from "../../../../language/presentation/components/language-select";
 
 interface CategoryFormProps {
   category?: Category | null;
@@ -34,8 +26,6 @@ export function CategoryForm({
   onCancel,
   onSuccess,
 }: CategoryFormProps) {
-  const { data: languages = [] } = useLanguages();
-
   const { data: categoriesResponse } = useCategories({
     page: 1,
     limit: 100,
@@ -43,12 +33,23 @@ export function CategoryForm({
 
   const existingCategories = categoriesResponse?.data ?? [];
 
-  const firstLanguageId = languages[0]?.id ?? "";
+  /*
+   * We still need a default language ID for the form's initial state.
+   *
+   * LanguageSelect owns the actual language query used by the UI.
+   * The form hook currently expects the first available language
+   * as its default when creating a new category.
+   *
+   * If you want to completely remove language fetching from this
+   * component, the cleaner long-term solution is to let
+   * useCategoryForm resolve its own default language.
+   */
+  const firstLanguageId = "";
 
   const { form, isEditing, isSaving } = useCategoryForm({
     category,
     defaultLanguageId: firstLanguageId,
-    open: true, // always "open" on a page — keeps the hook's reset behavior
+    open: true,
     onSuccess: () => onSuccess?.(),
   });
 
@@ -59,12 +60,13 @@ export function CategoryForm({
   );
 
   return (
-    <div className="w-full bg-white rounded-md p-6">
+    <div className="w-full rounded-md bg-white p-6">
       {/* Page header */}
       <div className="mb-4 border-b border-zinc-200 pb-4">
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
           {isEditing ? "Edit Category" : "Create Category"}
         </h1>
+
         <p className="mt-1 text-sm text-zinc-500">
           {isEditing
             ? `Update category details for ${category?.name}.`
@@ -114,12 +116,10 @@ export function CategoryForm({
 
           {/* Language + Parent */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Default Language */}
             <form.Field name="defaultLanguageId">
               {(field) => {
                 const hasError = field.state.meta.errors.length > 0;
-                const selectedLanguage = languages.find(
-                  (l) => l.id === field.state.value,
-                );
 
                 return (
                   <Field data-invalid={hasError}>
@@ -127,30 +127,17 @@ export function CategoryForm({
                       Default Language
                     </FieldLabel>
 
-                    <Select
+                    <LanguageSelect
                       value={field.state.value}
                       onValueChange={(value) => {
-                        if (value !== null) {
-                          field.handleChange(value);
-                        }
+                        field.handleChange(value);
+                        field.handleBlur();
                       }}
-                    >
-                      <SelectTrigger id={field.name}>
-                        <SelectValue placeholder="Select language">
-                          {selectedLanguage
-                            ? `${selectedLanguage.name} (${selectedLanguage.code})`
-                            : undefined}
-                        </SelectValue>
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        {languages.map((language) => (
-                          <SelectItem key={language.id} value={language.id}>
-                            {language.name} ({language.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select language"
+                      searchPlaceholder="Search languages..."
+                      disabled={isSaving}
+                      className={hasError ? "border-red-500" : undefined}
+                    />
 
                     {hasError && (
                       <FieldError
@@ -164,33 +151,31 @@ export function CategoryForm({
               }}
             </form.Field>
 
+            {/* Parent Category */}
             <form.Field name="parentId">
               {(field) => (
                 <Field>
                   <FieldLabel htmlFor={field.name}>Parent Category</FieldLabel>
 
-                  <Select
-                    value={field.state.value ?? "__none__"}
-                    onValueChange={(value) => {
-                      field.handleChange(value === "__none__" ? null : value);
+                  <select
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value ?? ""}
+                    onChange={(event) => {
+                      field.handleChange(event.target.value || null);
                     }}
+                    onBlur={field.handleBlur}
+                    disabled={isSaving}
+                    className="border-input bg-background flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <SelectTrigger id={field.name}>
-                      <SelectValue placeholder="None (Top-Level Category)" />
-                    </SelectTrigger>
+                    <option value="">None (Top-Level Category)</option>
 
-                    <SelectContent>
-                      <SelectItem value="__none__">
-                        None (Top-Level Category)
-                      </SelectItem>
-
-                      {parentCategories.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {parentCategories.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
                 </Field>
               )}
             </form.Field>
@@ -235,6 +220,7 @@ export function CategoryForm({
                         referrerPolicy="no-referrer"
                         className="size-10 rounded-md border object-cover"
                       />
+
                       <span className="text-xs text-muted-foreground">
                         Image Preview
                       </span>
@@ -262,6 +248,7 @@ export function CategoryForm({
                     onBlur={field.handleBlur}
                     onChange={(event) => {
                       const value = Number.parseInt(event.target.value, 10);
+
                       field.handleChange(Number.isNaN(value) ? 0 : value);
                     }}
                   />

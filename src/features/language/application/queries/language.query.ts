@@ -18,22 +18,3 @@ export function useLanguage(id: string) {
     enabled: Boolean(id),
   });
 }
-
-// export function useDefaultLanguageQuery() {
-//   return useQuery({
-//     queryKey: languageKeys.lists(),
-//     queryFn: () => languageApi.lists(),
-//     staleTime: Infinity,
-//     select: (languages: LanguagePublic[]): LanguagePublic | undefined => {
-//       if (languages.length === 0) return undefined;
-
-//       const byCode = languages.find((l) => l.code === "en");
-//       if (byCode) return byCode;
-
-//       const bySlug = languages.find((l) => l.slug === "english");
-//       if (bySlug) return bySlug;
-
-//       return languages[0];
-//     },
-//   });
-// }

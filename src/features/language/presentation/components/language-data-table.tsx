@@ -11,20 +11,20 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 
-import { languageColumns } from "./language-columns";
 import { languageTableFeatures } from "./language-table-config";
 import type { Language } from "../../domain/types/language.type";
+import type { ColumnDef } from "@tanstack/react-table";
 
-type LanguageDataTableProps = {
+interface LanguageDataTableProps {
   data: Language[];
-  onEdit: (language: Language) => void;
-};
+  columns: ColumnDef<typeof languageTableFeatures, Language>[];
+}
 
-export function LanguageDataTable({ data }: LanguageDataTableProps) {
+export function LanguageDataTable({ data, columns }: LanguageDataTableProps) {
   const table = useTable({
     features: languageTableFeatures,
     data,
-    columns: languageColumns,
+    columns,
     getRowId: (row) => row.id,
   });
 
@@ -58,10 +58,7 @@ export function LanguageDataTable({ data }: LanguageDataTableProps) {
             ))
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={languageColumns.length}
-                className="h-24 text-center"
-              >
+              <TableCell colSpan={columns.length} className="h-24 text-center">
                 No languages found.
               </TableCell>
             </TableRow>

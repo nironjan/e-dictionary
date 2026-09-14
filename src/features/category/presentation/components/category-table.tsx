@@ -16,26 +16,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
-import type { WordSummary } from "../../../domain/types/word.types";
-import { wordTableFeatures } from "../word-table-config";
-import { LoadingState } from "../../../../../shared/components/common/loading-state";
+import type { Category } from "../../domain/types/category.type";
+import { categoryTableFeatures } from "./category-table-config";
 
-interface WordListTableProps {
-  words: WordSummary[];
-  columns: ColumnDef<typeof wordTableFeatures, WordSummary>[];
+interface CategoryListTableProps {
+  categories: Category[];
+  columns: ColumnDef<typeof categoryTableFeatures, Category>[];
   isLoading: boolean;
 }
 
-export function WordListTable({
-  words,
+export function CategoryListTable({
+  categories,
   columns,
   isLoading,
-}: WordListTableProps) {
+}: CategoryListTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useTable({
-    features: wordTableFeatures,
-    data: words,
+    features: categoryTableFeatures,
+    data: categories,
     columns,
     state: {
       sorting,
@@ -70,7 +69,7 @@ export function WordListTable({
                 colSpan={columns.length}
                 className="h-32 text-center text-xs text-zinc-500"
               >
-                <LoadingState message="Loading dictionary entries..." />
+                Loading categories...
               </TableCell>
             </TableRow>
           ) : table.getRowModel().rows.length > 0 ? (
@@ -89,8 +88,7 @@ export function WordListTable({
                 colSpan={columns.length}
                 className="h-32 text-center text-xs text-zinc-500"
               >
-                No words found matching criteria. Click &quot;New Word
-                Entry&quot; to add one.
+                No categories found. Click &quot;New Category&quot; to add one.
               </TableCell>
             </TableRow>
           )}

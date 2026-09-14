@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CategoryForm } from "@/features/category/presentation/components/category-form";
+import { CategoryForm } from "@/features/category/presentation/components/form/category-form";
 import { APP_CONSTANTS } from "../../../../../lib/constants/constants";
 
 export default function CreateCategoryPage() {

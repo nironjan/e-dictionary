@@ -18,12 +18,12 @@ import type {
   CategoryActiveFilter,
 } from "../../domain/types/admin-category-list.type";
 
-type CategoryListToolbarProps = {
+interface CategoryListToolbarProps {
   filters: AdminCategoryListFilters;
   onSearchChange: (value: string) => void;
   onActiveChange: (value: CategoryActiveFilter) => void;
   onReset: () => void;
-};
+}
 
 export function CategoryListToolbar({
   filters,
@@ -50,13 +50,16 @@ export function CategoryListToolbar({
 
         <Select
           value={filters.activation}
-          onValueChange={(value) =>
-            onActiveChange(value as CategoryActiveFilter)
-          }
+          onValueChange={(value) => {
+            if (value === "all" || value === "active" || value === "inactive") {
+              onActiveChange(value);
+            }
+          }}
         >
           <SelectTrigger className="w-45">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
+
           <SelectContent>
             <SelectGroup>
               <SelectItem value="all">All</SelectItem>

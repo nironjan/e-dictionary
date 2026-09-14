@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useMemo } from "react";
 
 import { useToast } from "@/shared/hooks/use-toast";
 import { useAppForm } from "@/shared/components/common/form/use-app-form";
@@ -40,22 +40,22 @@ function getCategoryFormValues(
     };
   }
 
-  // When editing, prefer the default-language translation's name
-  // (the category.name is a projection of it anyway).
+  const categoryDefaultLanguageId =
+    category.defaultLanguageId ??
+    category.defaultLanguage?.id ??
+    defaultLanguageId;
+
   const defaultTranslation = category.translations?.find(
-    (t) =>
-      (t.languageId ?? t.language?.id) ===
-      (category.defaultLanguageId ?? category.defaultLanguage?.id),
+    (translation) =>
+      (translation.languageId ?? translation.language?.id) ===
+      categoryDefaultLanguageId,
   );
 
   return {
-    name: defaultTranslation?.name ?? category.name,
+    name: defaultTranslation?.name ?? category.name ?? "",
     image: category.image ?? "",
     parentId: category.parentId ?? null,
-    defaultLanguageId:
-      category.defaultLanguage?.id ??
-      category.defaultLanguageId ??
-      defaultLanguageId,
+    defaultLanguageId: categoryDefaultLanguageId,
     isActive: category.isActive,
     sortOrder: category.sortOrder ?? 0,
   };
@@ -72,8 +72,13 @@ export function useCategoryForm({
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
 
+  const defaultValues = useMemo(
+    () => getCategoryFormValues(category, defaultLanguageId),
+    [category, defaultLanguageId],
+  );
+
   const form = useAppForm({
-    defaultValues: defaultCategoryFormValues,
+    defaultValues,
 
     validators: {
       onSubmit: categoryFormSchema,
@@ -82,8 +87,6 @@ export function useCategoryForm({
     onSubmit: async ({ value }) => {
       try {
         if (category) {
-          // ✅ Update: strip `name` (derived from default translation).
-          //    Also strip `translations` — this endpoint doesn't accept it.
           const updateDto: UpdateCategoryDto = {
             image: value.image || undefined,
             parentId: value.parentId,
@@ -99,8 +102,6 @@ export function useCategoryForm({
 
           toast.success("Category updated successfully");
         } else {
-          // ✅ Create: name lives inside `translations[]`, not at top level.
-          //    The translation matching `defaultLanguageId` becomes canonical.
           const createDto: CreateCategoryDto = {
             defaultLanguageId: value.defaultLanguageId,
             parentId: value.parentId,
@@ -131,14 +132,6 @@ export function useCategoryForm({
       }
     },
   });
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    form.reset(getCategoryFormValues(category, defaultLanguageId));
-  }, [category, defaultLanguageId, form, open]);
 
   return {
     form,

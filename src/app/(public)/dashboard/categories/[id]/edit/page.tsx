@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
-import { CategoryForm } from "@/features/category/presentation/components/category-form";
+import { CategoryForm } from "@/features/category/presentation/components/form/category-form";
 import { useCategory } from "@/features/category/application/queries/category.query";
 import { APP_CONSTANTS } from "../../../../../../lib/constants/constants";
 import { LoadingState } from "../../../../../../shared/components/common/loading-state";

@@ -4,7 +4,7 @@ import {
   tableFeatures,
 } from "@tanstack/react-table";
 
-export const languageTableFeatures = tableFeatures({
+export const usersTableFeatures = tableFeatures({
   rowSortingFeature,
   sortedRowModel: createSortedRowModel(),
 });
