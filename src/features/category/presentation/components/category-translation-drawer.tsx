@@ -29,7 +29,6 @@ import {
   useDeleteCategoryTranslation,
   useUpdateCategoryTranslation,
 } from "../../application/mutation/category.mutation";
-
 import { LanguageSelect } from "../../../language/presentation/components/language-select";
 
 interface CategoryTranslationsDrawerProps {
@@ -326,10 +325,10 @@ function CategoryTranslationsContent({ category, onClose }: ContentProps) {
 
                   <LanguageSelect
                     value={formData.languageId}
-                    onValueChange={(value) =>
+                    onChange={(value) =>
                       setFormData((current) => ({
                         ...current,
-                        languageId: value,
+                        languageId: value ?? "",
                       }))
                     }
                     placeholder="Select language"

@@ -4,8 +4,8 @@ import { StatsOverview } from "../../../features/dashboard/presentation/componen
 import { BookA, FolderTree, Languages, Terminal } from "lucide-react";
 import { WordList } from "../../../features/dictionary/presentation/components/word/word-list";
 import { CategoryList } from "../../../features/category/presentation/components/category-list";
-import { LanguageList } from "../../../features/language/presentation/components/language-list";
 import { ApiRoutesExplorer } from "../../../features/api-doc/components/api-routes";
+import { LanguagesList } from "../../../features/language/presentation/components/language-list";
 
 export default function DashboardPage() {
   type NavigationSection = "words" | "categories" | "languages" | "api-routes";
@@ -78,7 +78,7 @@ export default function DashboardPage() {
         <div>
           {activeSection === "words" && <WordList />}
           {activeSection === "categories" && <CategoryList />}
-          {activeSection === "languages" && <LanguageList />}
+          {activeSection === "languages" && <LanguagesList />}
           {activeSection === "api-routes" && <ApiRoutesExplorer />}
         </div>
       </main>

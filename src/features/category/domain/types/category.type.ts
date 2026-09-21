@@ -57,6 +57,7 @@ export type UpdateCategoryTranslationDto =
 export interface CreateCategoryDto {
   defaultLanguageId?: string;
   parentId?: string | null;
+  name: string;
   image?: string;
   isActive?: boolean;
   sortOrder?: number;

@@ -34,6 +34,10 @@ function buildQueryString(query: QueryWordsDto): string {
     searchParams.set("isVerified", String(query.isVerified));
   }
 
+  if (query.categoryId) {
+    searchParams.set("categoryId", query.categoryId);
+  }
+
   const queryString = searchParams.toString();
   return queryString
     ? `${ADMIN_WORD_ENDPOINT}?${queryString}`

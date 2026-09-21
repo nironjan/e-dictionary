@@ -3,10 +3,11 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
-  Edit2,
+  Tags,
   Image as ImageIcon,
-  Languages,
   Trash2,
+  Languages,
+  Edit2,
 } from "lucide-react";
 
 import { Badge } from "@/shared/components/ui/badge";
@@ -110,8 +111,8 @@ export function getCategoryTableColumns({
             onClick={() => onManageTranslations(category)}
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
           >
-            <Languages className="size-3.5" />
-            <span>Manage translations</span>
+            <Tags className="size-3.5" />
+            <span>Manage categories</span>
           </button>
         );
       },

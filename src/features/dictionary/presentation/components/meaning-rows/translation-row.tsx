@@ -10,12 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../../../shared/components/ui/select";
-import { Input } from "../../../../../shared/components/ui/input";
 import { Switch } from "../../../../../shared/components/ui/switch";
 
 import { useWords } from "../../../application/queries/word.query";
 import type { TranslationItem, TranslationUpdate } from "./meaning.types";
 import type { Language } from "../../../../language/domain/types/language.type";
+import { Textarea } from "../../../../../shared/components/ui/textarea";
 
 interface TranslationRowProps {
   translation: TranslationItem;
@@ -160,7 +160,7 @@ export function TranslationRow({
           Translation
         </label>
 
-        <Input
+        <Textarea
           value={translation.text}
           onChange={(event) =>
             onUpdate(index, {
@@ -168,7 +168,7 @@ export function TranslationRow({
             })
           }
           placeholder="Enter translated word or phrase..."
-          className="text-xs"
+          className="text-xs min-h-15 resize-none"
         />
       </div>
 

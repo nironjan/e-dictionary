@@ -88,6 +88,7 @@ export function useCategoryForm({
       try {
         if (category) {
           const updateDto: UpdateCategoryDto = {
+            name: value.name,
             image: value.image || undefined,
             parentId: value.parentId,
             defaultLanguageId: value.defaultLanguageId,
@@ -105,6 +106,7 @@ export function useCategoryForm({
           const createDto: CreateCategoryDto = {
             defaultLanguageId: value.defaultLanguageId,
             parentId: value.parentId,
+            name: value.name,
             image: value.image || undefined,
             isActive: value.isActive,
             sortOrder: value.sortOrder,

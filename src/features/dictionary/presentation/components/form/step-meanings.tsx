@@ -12,7 +12,10 @@ import { Button } from "../../../../../shared/components/ui/button";
 
 import { useLanguages } from "../../../../language/application/queries/language.query";
 import type { CreateWordFormData } from "../../../domain/schema/word.schema";
-import { PartOfSpeech } from "../../../domain/types/enums/word.enum.types";
+import {
+  PartOfSpeech,
+  RelationType,
+} from "../../../domain/types/enums/word.enum.types";
 
 import { MeaningSettings } from "../meaning-rows/meaning-settings";
 
@@ -24,12 +27,15 @@ import type {
   DefinitionUpdate,
   TranslationUpdate,
   ExampleUpdate,
+  RelationItem,
+  RelationUpdate,
 } from "../meaning-rows/meaning.types";
 
 import { DefinitionsSection } from "../meaning-rows/definition-section";
 import { TranslationsSection } from "../meaning-rows/translation-section";
 import { ExamplesSection } from "../meaning-rows/example-section";
 import { useState } from "react";
+import { RelationsSection } from "../meaning-rows/relation-section";
 
 interface StepMeaningsProps {
   formData: CreateWordFormData;
@@ -41,6 +47,11 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
   const [expandedMeanings, setExpandedMeanings] = useState<string[]>([]);
 
   const meanings = formData.meanings ?? [];
+  const sourceLanguage = languages.find(
+    (language) => language.id === formData.languageId,
+  );
+
+  const sourceLanguageCode = sourceLanguage?.code ?? "";
 
   // ---------------------------------------------------------------------------
   // Meanings
@@ -314,6 +325,36 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
   };
 
   // ---------------------------------------------------------------------------
+  // Relations
+  // ---------------------------------------------------------------------------
+
+  const handleAddRelation = (meaningIdx: number, relation: RelationItem) => {
+    const meaning = meanings[meaningIdx];
+    if (!meaning) return;
+
+    const relations = meaning.relations ?? [];
+
+    updateMeaning(meaningIdx, {
+      relations: [
+        ...relations,
+        {
+          ...relation,
+          sortOrder: relations.length,
+        },
+      ],
+    });
+  };
+
+  const handleRemoveRelation = (meaningIdx: number, relIdx: number) => {
+    const meaning = meanings[meaningIdx];
+    if (!meaning) return;
+
+    updateMeaning(meaningIdx, {
+      relations: (meaning.relations ?? []).filter((_, i) => i !== relIdx),
+    });
+  };
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
@@ -470,6 +511,16 @@ export function StepMeanings({ formData, onChange }: StepMeaningsProps) {
                         handleUpdateExample(idx, exIdx, partial)
                       }
                       onRemove={(exIdx) => handleRemoveExample(idx, exIdx)}
+                    />
+
+                    {/* Relations */}
+
+                    <RelationsSection
+                      relations={meaning.relations ?? []}
+                      searchLanguageCode={sourceLanguageCode}
+                      ownerMeaningId={meaning.id}
+                      onAdd={(relation) => handleAddRelation(idx, relation)}
+                      onRemove={(relIdx) => handleRemoveRelation(idx, relIdx)}
                     />
 
                     {/* Delete Meaning */}

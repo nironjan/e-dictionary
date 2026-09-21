@@ -65,6 +65,9 @@ export const relationSchema = z.object({
     .default(RelationType.SYNONYM),
   relatedMeaningId: z.string().min(1, "Related meaning ID is required"),
   sortOrder: z.number().int().optional().default(0),
+  relatedWordId: z.string().optional(),
+  relatedWordText: z.string().optional(),
+  relatedPartOfSpeech: z.string().optional(),
 });
 
 export const meaningSchema = z.object({
@@ -121,7 +124,31 @@ export const mediaSchema = z.object({
   sortOrder: z.number().int().optional().default(0),
 });
 
+export const wordDirectTranslationSchema = z.object({
+  id: z.string().optional(),
+  targetWordId: z.string().min(1, "Target word is required"),
+  isVerified: z.boolean().default(false),
+  sortOrder: z.number().int().optional().default(0),
+
+  // Display-only, hydrated from API on read; not sent in create/update payloads.
+  targetWord: z
+    .object({
+      id: z.string(),
+      text: z.string(),
+      normalizedText: z.string().optional(),
+      language: z.object({
+        id: z.string(),
+        code: z.string(),
+        name: z.string(),
+        slug: z.string().optional(),
+        nativeName: z.string().optional(),
+      }),
+    })
+    .optional(),
+});
+
 export const createWordSchema = z.object({
+  wordId: z.string().optional(),
   languageId: z.string().min(1, "Language is required"),
   text: z
     .string()
@@ -133,6 +160,10 @@ export const createWordSchema = z.object({
   sources: z.array(sourceSchema).default([]),
   media: z.array(mediaSchema).default([]),
   categoryIds: z.array(z.string()).default([]),
+  wordTranslations: z
+    .array(wordDirectTranslationSchema)
+    .max(30, "Max 30 direct translations")
+    .default([]),
 });
 
 export const updateWordSchema = createWordSchema.partial().extend({

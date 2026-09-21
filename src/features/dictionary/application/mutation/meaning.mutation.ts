@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { meaningApi } from "../../infrastructure/meaning.api";
 import { MEANING_QUERY_KEY } from "../queries/meaning.query";
-import { WORD_QUERY_KEY } from "../queries/word.query";
 import type { SetMeaningVerifiedDto } from "../../domain/types/word.types";
+import { wordQueryKeys } from "../query-keys/word.query-keys";
 
 interface VerifyMeaningVariables {
   id: string;
@@ -23,12 +23,14 @@ export function useVerifyMeaning() {
       });
 
       queryClient.invalidateQueries({
-        queryKey: WORD_QUERY_KEY,
+        queryKey: wordQueryKeys.all,
       });
 
-      queryClient.invalidateQueries({
-        queryKey: ["dictionary", "word", meaning.wordId],
-      });
+      if (meaning.wordId !== undefined) {
+        queryClient.invalidateQueries({
+          queryKey: wordQueryKeys.detail(meaning.wordId),
+        });
+      }
     },
   });
 }

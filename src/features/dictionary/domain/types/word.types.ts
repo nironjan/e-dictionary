@@ -44,6 +44,27 @@ export interface WordTranslation {
   updatedAt?: string;
 }
 
+export interface WordDirectTranslation {
+  id?: string;
+  targetWordId: string;
+  sortOrder?: number;
+  isVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  targetWord?: {
+    id: string;
+    text: string;
+    normalizedText?: string;
+    language: {
+      id: string;
+      code: string;
+      name: string;
+      slug?: string;
+      nativeName?: string;
+    };
+  };
+}
+
 export interface WordExample {
   id?: string;
   languageId: string;
@@ -61,7 +82,10 @@ export interface WordRelation {
   relationType: RelationType;
   relatedMeaningId: string;
   sortOrder?: number;
-  createdAt?: string;
+
+  relatedWordId?: string;
+  relatedWordText?: string;
+  relatedPartOfSpeech?: string;
 }
 
 export interface WordMeaning {
@@ -120,15 +144,6 @@ export interface WordMedia {
   updatedAt?: string;
 }
 
-// export interface WordListItem {
-//   id: string;
-//   text: string;
-//   language: Pick<Language, "id" | "code" | "name">;
-//   isVerified: boolean;
-//   version: number;
-//   updatedAt: string;
-// }
-
 export interface WordListItem {
   id: string;
   text: string;
@@ -166,6 +181,7 @@ export interface WordDetail {
   media?: WordMedia[];
   categories?: Category[];
   categoryIds?: string[];
+  wordTranslations?: WordDirectTranslation[];
 }
 
 export interface CreateWordDto {
@@ -177,6 +193,7 @@ export interface CreateWordDto {
   sources?: WordSource[];
   media?: WordMedia[];
   categoryIds?: string[];
+  wordTranslations?: WordDirectTranslation[];
 }
 
 export interface UpdateWordDto extends Partial<CreateWordDto> {

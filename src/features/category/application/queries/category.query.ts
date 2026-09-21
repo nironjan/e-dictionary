@@ -9,7 +9,7 @@ export const CATEGORY_QUERY_KEY = ["categories"] as const;
 
 export function useCategories(params: CategoryListParams) {
   return useQuery({
-    queryKey: categoryKeys.lists(params),
+    queryKey: categoryKeys.list(params),
     queryFn: () => categoryApi.list(params),
     placeholderData: keepPreviousData,
   });

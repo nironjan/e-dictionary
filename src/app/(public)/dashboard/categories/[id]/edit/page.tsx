@@ -14,7 +14,7 @@ export default function EditCategoryPage() {
   const { data: category, isLoading, isError } = useCategory(id);
 
   if (isLoading) {
-    return <LoadingState message="loading..." />;
+    return <LoadingState message="Loading..." />;
   }
   if (isError || !category) {
     return <div className="p-6 text-sm text-red-600">Category not found.</div>;

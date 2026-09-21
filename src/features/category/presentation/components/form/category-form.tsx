@@ -90,7 +90,9 @@ export function CategoryForm({
 
               return (
                 <Field data-invalid={hasError}>
-                  <FieldLabel htmlFor={field.name}>Category Name</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    Category Name *(update from manage categories)
+                  </FieldLabel>
 
                   <Input
                     id={field.name}
@@ -129,13 +131,14 @@ export function CategoryForm({
 
                     <LanguageSelect
                       value={field.state.value}
-                      onValueChange={(value) => {
+                      onChange={(value) => {
                         field.handleChange(value);
                         field.handleBlur();
                       }}
+                      onBlur={field.handleBlur}
                       placeholder="Select language"
-                      searchPlaceholder="Search languages..."
                       disabled={isSaving}
+                      includeAll={false}
                       className={hasError ? "border-red-500" : undefined}
                     />
 

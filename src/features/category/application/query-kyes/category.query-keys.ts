@@ -1,13 +1,12 @@
-import type { AdminCategoryListQuery } from "../../domain/types/admin-category-list.type";
+import type { CategoryListParams } from "../../domain/types/category.type";
 
 export const categoryKeys = {
   all: ["categories"] as const,
 
-  lists: (params?: AdminCategoryListQuery) =>
-    [...categoryKeys.all, "list", params] as const,
+  lists: () => [...categoryKeys.all, "list"] as const,
 
-  list: (params: AdminCategoryListQuery) =>
-    [...categoryKeys.lists(params)] as const,
+  list: (params: CategoryListParams) =>
+    [...categoryKeys.lists(), params] as const,
 
   details: () => [...categoryKeys.all, "detail"] as const,
 

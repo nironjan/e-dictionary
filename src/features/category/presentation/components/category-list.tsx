@@ -57,7 +57,7 @@ export function CategoryList() {
   const pagination = query.data?.pagination;
 
   const handleCreate = useCallback(() => {
-    router.push("/dashboard/categories/new");
+    router.push("/dashboard/categories/create");
   }, [router]);
 
   const handleEdit = useCallback(
@@ -130,7 +130,21 @@ export function CategoryList() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">categories</h1>
+
+          <p className="text-muted-foreground">
+            Manage category and their translations.
+          </p>
+        </div>
+
+        <Button type="button" onClick={handleCreate}>
+          Add Category
+        </Button>
+      </div>
+
       <CategoryListToolbar
         filters={filters}
         onSearchChange={handleSearchChange}

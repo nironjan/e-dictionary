@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, AlertCircle, Save } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight, Save } from "lucide-react";
+
 import {
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
-  TabsContent,
 } from "@/shared/components/ui/tabs";
-import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
-import type { WordDetail } from "../../../domain/types/word.types";
+import { Button } from "@/shared/components/ui/button";
+
 import { useLanguages } from "../../../../language/application/queries/language.query";
 import {
   useCreateWord,
@@ -27,13 +28,15 @@ import {
   SourceType,
   type PartOfSpeech,
 } from "../../../domain/types/enums/word.enum.types";
+import type { WordDetail } from "../../../domain/types/word.types";
+
 import { StepCoreInfo } from "./step-core-info";
-import { StepPhonetics } from "./step-phonetics";
-import { StepMeanings } from "./step-meanings";
 import { StepEtymologies } from "./step-etymologies";
-import { StepSources } from "./step-sources";
 import { StepMedia } from "./step-media";
+import { StepMeanings } from "./step-meanings";
+import { StepPhonetics } from "./step-phonetics";
 import { StepReviewSubmit } from "./review-submit";
+import { StepSources } from "./step-sources";
 
 interface WordFormProps {
   wordToEdit?: WordDetail | null;
@@ -59,9 +62,25 @@ function getInitialState(
 ): CreateWordFormData {
   if (wordToEdit) {
     return {
+      wordId: wordToEdit.id,
       text: wordToEdit.text,
       languageId: wordToEdit.languageId,
+
       categoryIds: wordToEdit.categories?.map((category) => category.id) ?? [],
+
+      /*
+       * Direct word-to-word translations.
+       *
+       * These are separate from meaning-level translations.
+       */
+      wordTranslations:
+        wordToEdit.wordTranslations?.map((translation, index) => ({
+          id: translation.id,
+          targetWordId: translation.targetWordId,
+          isVerified: translation.isVerified ?? false,
+          sortOrder: translation.sortOrder ?? index,
+          targetWord: translation.targetWord,
+        })) ?? [],
 
       phonetics:
         wordToEdit.phonetics?.map((phonetic, index) => ({
@@ -120,6 +139,10 @@ function getInitialState(
               relationType: relation.relationType ?? RelationType.SYNONYM,
               relatedMeaningId: relation.relatedMeaningId,
               sortOrder: relation.sortOrder ?? relationIndex,
+
+              relatedWordId: relation.relatedWordId ?? "",
+              relatedWordText: relation.relatedWordText ?? "",
+              relatedPartOfSpeech: relation.relatedPartOfSpeech ?? "",
             })) ?? [],
         })) ?? [],
 
@@ -161,9 +184,11 @@ function getInitialState(
   const defaultLanguageId = languages[0]?.id ?? "";
 
   return {
+    wordId: undefined,
     text: "",
     languageId: defaultLanguageId,
     categoryIds: [],
+    wordTranslations: [],
     phonetics: [],
 
     meanings: [
@@ -194,6 +219,7 @@ function getInitialState(
 
 export function WordForm({ wordToEdit, onCancel, onSuccess }: WordFormProps) {
   const { data: languages = [] } = useLanguages();
+
   const createMutation = useCreateWord();
   const updateMutation = useUpdateWord();
 
@@ -206,47 +232,63 @@ export function WordForm({ wordToEdit, onCancel, onSuccess }: WordFormProps) {
   );
 
   const updateFormData = (partial: Partial<CreateWordFormData>) => {
-    setFormData((prev) => ({ ...prev, ...partial }));
+    setFormData((previous) => ({
+      ...previous,
+      ...partial,
+    }));
   };
 
   const validateStep = (tab: TabId): boolean => {
     if (tab === "core") {
       const fieldErrors: Record<string, string> = {};
+
       if (!formData.text || formData.text.trim().length === 0) {
         fieldErrors.text = "Word text is required";
       }
+
       if (!formData.languageId) {
         fieldErrors.languageId = "Language is required";
       }
+
       setErrors(fieldErrors);
+
       return Object.keys(fieldErrors).length === 0;
     }
+
     return true;
   };
 
   const handleNext = () => {
-    if (!validateStep(activeTab)) return;
-    const currentIdx = TABS.findIndex((t) => t.id === activeTab);
-    if (currentIdx < TABS.length - 1) {
-      setActiveTab(TABS[currentIdx + 1].id);
+    if (!validateStep(activeTab)) {
+      return;
+    }
+
+    const currentIndex = TABS.findIndex((tab) => tab.id === activeTab);
+
+    if (currentIndex < TABS.length - 1) {
+      setActiveTab(TABS[currentIndex + 1].id);
     }
   };
 
   const handlePrev = () => {
-    const currentIdx = TABS.findIndex((t) => t.id === activeTab);
-    if (currentIdx > 0) {
-      setActiveTab(TABS[currentIdx - 1].id);
+    const currentIndex = TABS.findIndex((tab) => tab.id === activeTab);
+
+    if (currentIndex > 0) {
+      setActiveTab(TABS[currentIndex - 1].id);
     }
   };
 
   const handleSubmit = async () => {
     const result = createWordSchema.safeParse(formData);
+
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach((err) => {
-        const path = err.path.join(".");
-        fieldErrors[path] = err.message;
+
+      result.error.issues.forEach((issue) => {
+        const path = issue.path.join(".");
+        fieldErrors[path] = issue.message;
       });
+
       setErrors(fieldErrors);
       setGlobalError(
         "Please fix the validation errors shown in the review tab before submitting.",
@@ -256,31 +298,54 @@ export function WordForm({ wordToEdit, onCancel, onSuccess }: WordFormProps) {
     }
 
     try {
+      const { wordId, ...formWithoutId } = result.data;
+
+      const payload = {
+        ...formWithoutId,
+        wordTranslations: formWithoutId.wordTranslations.map(
+          ({ targetWord, ...rest }) => rest,
+        ),
+        meanings: formWithoutId.meanings.map((meaning) => ({
+          ...meaning,
+          relations: (meaning.relations ?? []).map(
+            ({
+              relatedWordId,
+              relatedWordText,
+              relatedPartOfSpeech,
+              ...rest
+            }) => rest,
+          ),
+        })),
+      };
+
       if (wordToEdit) {
         await updateMutation.mutateAsync({
           id: wordToEdit.id,
           dto: {
-            ...result.data,
-            version: wordToEdit.version ?? 1,
+            ...payload,
+            version: wordToEdit.version,
           },
         });
       } else {
-        await createMutation.mutateAsync(result.data);
+        await createMutation.mutateAsync(payload);
       }
-      if (onSuccess) onSuccess();
+
+      onSuccess?.();
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Failed to persist word entry";
+
       setGlobalError(message);
       setActiveTab("review");
     }
   };
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
-  const currentTabIdx = TABS.findIndex((t) => t.id === activeTab);
+
+  const currentTabIndex = TABS.findIndex((tab) => tab.id === activeTab);
 
   return (
-    <div className="w-full bg-white rounded-md p-6">
+    <div className="w-full rounded-md bg-white p-6">
       {/* Page header */}
       <div className="mb-4 border-b border-zinc-200 pb-4">
         <div className="flex items-center justify-between">
@@ -290,8 +355,8 @@ export function WordForm({ wordToEdit, onCancel, onSuccess }: WordFormProps) {
               : "Create New Word Entry"}
           </h1>
 
-          <span className="text-xs font-normal text-zinc-500 font-mono">
-            Tab {currentTabIdx + 1} of {TABS.length}
+          <span className="font-mono text-xs font-normal text-zinc-500">
+            Tab {currentTabIndex + 1} of {TABS.length}
           </span>
         </div>
 
@@ -317,7 +382,7 @@ export function WordForm({ wordToEdit, onCancel, onSuccess }: WordFormProps) {
         }}
         className="flex flex-col"
       >
-        <TabsList className="w-full flex justify-start overflow-x-auto border-b border-zinc-200 pb-1 rounded-none bg-transparent">
+        <TabsList className="flex w-full justify-start overflow-x-auto rounded-none border-b border-zinc-200 bg-transparent pb-1">
           {TABS.map((tab) => {
             const badgeCount =
               tab.id === "phonetics"
@@ -339,7 +404,7 @@ export function WordForm({ wordToEdit, onCancel, onSuccess }: WordFormProps) {
                 {badgeCount !== undefined && (
                   <Badge
                     variant="secondary"
-                    className="min-w-5 h-5 px-1 justify-center text-[10px] leading-none"
+                    className="flex h-5 min-w-5 items-center justify-center px-1 text-[10px] leading-none"
                   >
                     {badgeCount}
                   </Badge>
@@ -379,12 +444,15 @@ export function WordForm({ wordToEdit, onCancel, onSuccess }: WordFormProps) {
           </TabsContent>
 
           <TabsContent value="review">
-            <StepReviewSubmit formData={formData} isEditing={!!wordToEdit} />
+            <StepReviewSubmit
+              formData={formData}
+              isEditing={Boolean(wordToEdit)}
+            />
           </TabsContent>
         </div>
       </Tabs>
 
-      {/* Footer / nav */}
+      {/* Footer / navigation */}
       <div className="mt-6 flex items-center justify-between border-t border-zinc-100 pt-4">
         <div className="flex items-center gap-2">
           <Button
@@ -392,18 +460,19 @@ export function WordForm({ wordToEdit, onCancel, onSuccess }: WordFormProps) {
             variant="outline"
             size="sm"
             onClick={handlePrev}
-            disabled={currentTabIdx === 0 || isSubmitting}
+            disabled={currentTabIndex === 0 || isSubmitting}
             className="gap-1 text-xs"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             <span>Previous Step</span>
           </Button>
 
-          {currentTabIdx < TABS.length - 1 ? (
+          {currentTabIndex < TABS.length - 1 ? (
             <Button
               type="button"
               size="sm"
               onClick={handleNext}
+              disabled={isSubmitting}
               className="gap-1 text-xs"
             >
               <span>Next Step</span>
@@ -418,6 +487,7 @@ export function WordForm({ wordToEdit, onCancel, onSuccess }: WordFormProps) {
               className="gap-1.5 bg-emerald-600 text-xs text-white hover:bg-emerald-700"
             >
               <Save className="h-3.5 w-3.5" />
+
               <span>
                 {isSubmitting
                   ? "Saving..."
