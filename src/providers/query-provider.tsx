@@ -7,17 +7,19 @@ import {
 } from "@tanstack/react-query";
 import { isUnauthorizedError } from "@/lib/api/api-client";
 
-function handleUnauthorized() {
+function handleUnauthorized(): void {
   if (typeof window === "undefined") return;
 
   const pathname = window.location.pathname;
   const search = window.location.search;
 
-  // Don't bounce from auth pages themselves
-  if (pathname === "/login" || pathname === "/register") return;
+  if (pathname === "/login" || pathname === "/register") {
+    return;
+  }
 
   const redirect = encodeURIComponent(pathname + search);
-  window.location.href = `/login?redirect=${redirect}`;
+
+  window.location.replace(`/login?redirect=${redirect}`);
 }
 
 const queryClient = new QueryClient({
@@ -25,10 +27,21 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5,
       gcTime: 1000 * 60 * 10,
-      retry: 1,
+
+      retry: (failureCount, error) => {
+        // Never retry authentication failures.
+        // apiClient already attempts token refresh for 401 responses.
+        if (isUnauthorizedError(error)) {
+          return false;
+        }
+
+        return failureCount < 1;
+      },
+
       refetchOnWindowFocus: false,
     },
   },
+
   queryCache: new QueryCache({
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -42,7 +55,9 @@ type QueryProviderProps = {
   children: React.ReactNode;
 };
 
-export function QueryProvider({ children }: QueryProviderProps) {
+export function QueryProvider({
+  children,
+}: QueryProviderProps): React.ReactElement {
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );

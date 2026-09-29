@@ -51,7 +51,7 @@ export function ExamplesSection({
         <div className="space-y-2">
           {examples.map((example, index) => (
             <ExampleRow
-              key={`${index}-${example.text}`}
+              key={example.id ?? `new-example-${index}`}
               example={example}
               index={index}
               languages={languages}

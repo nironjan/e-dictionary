@@ -25,6 +25,16 @@ export const APP_CONSTANTS = {
     CATEGORY_CREATE: "/dashboard/categories/create",
     CATEGORY_EDIT: (id: string) => `/dashboard/categories/${id}/edit`,
 
+    DAILY_SENTENCES: "/dashboard/daily-sentences",
+    DAILY_SENTENCES_CREATE: "/dashboard/daily-sentences/create",
+    DAILY_SENTENCES_EDIT: (id: string) =>
+      `/dashboard/daily-sentences/${id}/edit`,
+
+    SPECIAL_EXPRESSIONS: "/dashboard/special-expressions",
+    SPECIAL_EXPRESSIONS_CREATE: "/dashboard/special-expressions/create",
+    SPECIAL_EXPRESSIONS_EDIT: (id: string) =>
+      `/dashboard/special-expressions/${id}/edit`,
+
     DASHBOARD: "/admin/dashboard",
     WORD_PHONETICS: (wordId: string) =>
       `/admin/dictionary/words/${wordId}/phonetics`,

@@ -8,6 +8,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { APP_CONSTANTS } from "../../../lib/constants/constants";
 
 export type AdminMenuChild = {
   label: string;
@@ -95,9 +96,22 @@ export const ADMIN_MENU_ITEMS = [
     description: "Manage application users",
   },
   {
-    label: "Settings",
-    href: "/dashboard/settings",
+    label: "Management",
+    href: "/dashboard/management",
     icon: Settings,
-    description: "Application settings",
+    children: [
+      {
+        label: "Daily Sentences",
+        href: APP_CONSTANTS.ROUTES.DAILY_SENTENCES,
+        icon: FolderTree,
+        description: "View and manage all daily usage sentences.",
+      },
+      {
+        label: "Special Expressions",
+        href: APP_CONSTANTS.ROUTES.SPECIAL_EXPRESSIONS,
+        icon: FolderTree,
+        description: "View and manage all special expressions",
+      },
+    ],
   },
 ] satisfies readonly AdminMenuItem[];

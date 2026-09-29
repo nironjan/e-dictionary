@@ -109,12 +109,17 @@ let refreshPromise: Promise<boolean> | null = null;
 
 async function refreshAccessToken(): Promise<boolean> {
   if (refreshPromise) {
+    console.log("[API] Refresh already in progress");
     return refreshPromise;
   }
 
+  console.log("[API] Starting token refresh");
+
   refreshPromise = (async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const refreshUrl = `${API_BASE_URL}/auth/refresh`;
+      console.log("[API] POST", refreshUrl);
+      const response = await fetch(refreshUrl, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -122,8 +127,27 @@ async function refreshAccessToken(): Promise<boolean> {
         },
       });
 
-      return response.ok;
-    } catch {
+      console.log("[API] Refresh response:", {
+        status: response.status,
+        ok: response.ok,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error("[API] Refresh failed:", {
+          status: response.status,
+          body: errorText,
+        });
+
+        return false;
+      }
+
+      console.log("[API] Token refresh successful");
+
+      return true;
+    } catch (error: unknown) {
+      console.error("[API] Refresh request error:", error);
       return false;
     } finally {
       refreshPromise = null;

@@ -1,8 +1,5 @@
 import apiClient from "../../../lib/api/api-client";
-import type {
-  AdminCategoryListQuery,
-  AdminCategoryListResponse,
-} from "../domain/types/admin-category-list.type";
+import type { AdminCategoryListQuery } from "../domain/types/admin-category-list.type";
 import type {
   Category,
   CategoryListParams,

@@ -12,10 +12,7 @@ import { Button } from "../../../../../shared/components/ui/button";
 
 import { useLanguages } from "../../../../language/application/queries/language.query";
 import type { CreateWordFormData } from "../../../domain/schema/word.schema";
-import {
-  PartOfSpeech,
-  RelationType,
-} from "../../../domain/types/enums/word.enum.types";
+import { PartOfSpeech } from "../../../domain/types/enums/word.enum.types";
 
 import { MeaningSettings } from "../meaning-rows/meaning-settings";
 
@@ -28,7 +25,6 @@ import type {
   TranslationUpdate,
   ExampleUpdate,
   RelationItem,
-  RelationUpdate,
 } from "../meaning-rows/meaning.types";
 
 import { DefinitionsSection } from "../meaning-rows/definition-section";
